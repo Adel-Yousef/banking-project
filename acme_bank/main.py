@@ -48,13 +48,13 @@ if __name__ == "__main__":
 
                     if user_input == "1":
                         account_type = input("From which account? (checking/savings): ").lower()
-                        amount = float(input(f"Enter amount to deposit into : {account_type}"))
+                        amount = float(input(f"Enter amount to deposit into : {account_type} "))
                         
                         with open(csv_file, "r", newline="") as file:
                             reader = csv.reader(file)
                             header = next(reader)
                             rows = list(reader)
-                        for row in enumerate(rows):
+                        for row in rows:
                             if row[0] == login_id:
                                 if account_type == "checking":
                                     if row[4]:
@@ -81,20 +81,19 @@ if __name__ == "__main__":
                                 break
                         
 
-                    # elif user_input == "2":
-                    #     amount = float(input("Enter amount to withdraw from checking: "))
-                    #     # current_balance = float(customer_row[4])
-                    #     if amount > current_balance:
-                    #         print("Insufficient funds!")
-                    #     else:
-                    #         customer_row[4] = str(current_balance - amount)
-                    #         print("New checking balance: ", customer_row[4])
+                    elif user_input == "2":
+                        account_type = input("From which account? (checking/savings): ").lower()
+                        amount = float(input(f"Enter amount to withdraw form {account_type}: "))
 
-                    elif user_input == "3":
-                        amount = float(input("Enter deposit amount for checking account: "))
-                        new_balance = logged_in_cus.deposit(login_id, amount, "checking")
+                        new_balance = logged_in_cus.withdraw(login_id, amount, account_type)
                         if new_balance is not None:
-                            print(f"Checking account opened successfully Balance: {new_balance}")
+                            print(f"Withdraw successful new {account_type} balance: {new_balance}")
+                        else:
+                            print("Withdraw failed insufficient funds")
+                        
+
+                    # elif user_input == "3":
+                        
                         
 
                     elif user_input == "4":

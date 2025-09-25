@@ -63,6 +63,54 @@ class Customer:
             writer.writerows(rows)
         
         return new_balance
+    
+    def withdraw(self, login_id, amount, account_type):
+        if login_id != self.account_id:
+            print("False customer id mismatch")
+            return None
+        
+        csv_file = "bank.csv"
+
+        with open(csv_file, "r", newline="") as file:
+            reader = csv.reader(file)
+            header = next(reader)
+            rows = list(reader)
+
+            for row in rows:
+                if row[0] == self.account_id:
+                    if account_type == "checking":
+                        if row[4]:
+                            current_balance = float(row[4])
+                        else:
+                            current_balance = 0.0
+                        
+                        if amount > current_balance:
+                            print("insufficient funds")
+                            return None
+                        
+                        new_balance = self.checking_account.withdraw(amount)
+                        row[4] = str(new_balance)
+                        break
+
+                    elif account_type == "savings":
+                        if row[5]:
+                            current_balance = float(row[5])
+                        else:
+                            current_balance = 0.0
+                        
+                        if amount > current_balance:
+                            print("insufficient funds")
+                            return None
+                        
+                        new_balance = self.savings_account.withdraw(amount)
+                        row[5] = str(new_balance)
+                        break
+            with open(csv_file, "w", newline="") as file:
+                writer = csv.writer(file)
+                writer.writerow(header)
+                writer.writerows(rows)
+                
+            return new_balance
 
 
 
