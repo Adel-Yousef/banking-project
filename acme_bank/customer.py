@@ -136,6 +136,7 @@ class Customer:
 
                 account_found = True
                 
+                
                 if from_account == "checking" and to_account == "savings":
                     if row[4]:
                         checking_balance = float(row[4])
