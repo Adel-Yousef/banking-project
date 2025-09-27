@@ -50,38 +50,11 @@ if __name__ == "__main__":
                         account_type = input("From which account? (checking/savings): ").lower()
                         amount = float(input(f"Enter amount to deposit into : {account_type} "))
                         
-                        with open(csv_file, "r", newline="") as file:
-                            reader = csv.reader(file)
-                            header = next(reader)
-                            rows = list(reader)
-
-                        for row in rows:
-                            if row[0] == login_id:
-                                if account_type == "checking":
-                                    if row[4]:
-                                        current_balance = float(row[4])
-                                    else:
-                                        current_balance = 0.0
-
-                                    new_balance = current_balance + amount
-                                    row[4] = str(new_balance)
-                                    print(f"Deposit seccess your checking balance is: {new_balance}")
-
-                                elif account_type == "savings":
-                                    if row[5]:
-                                        current_balance = float(row[5])
-                                    else:
-                                        current_balance = 0.0
-
-                                    new_balance = current_balance + amount
-                                    row[5] = str(new_balance)
-                                    print(f"Deposit success new balance is: {row[5]}")
-                    
-                                with open(csv_file, "w", newline="") as file:
-                                    writer = csv.writer(file)
-                                    writer.writerow(header)
-                                    writer.writerows(rows)
-                                break
+                        new_balance = logged_in_cus.deposit(login_id, amount, account_type)
+                        if new_balance is not None:
+                            print(f"Deposit successful new {account_type} balance is: {new_balance}")
+                        else:
+                            print("Deposit failed")
                         
                     elif user_input == "2":
                         account_type = input("From which account? (checking/savings): ").lower()
@@ -92,15 +65,13 @@ if __name__ == "__main__":
                             print(f"Withdraw successful new {account_type} balance: {new_balance}")
                         else:
                             print("Withdraw failed insufficient funds")
-                        
-
+                    
                     elif user_input == "3":
                         amount = float(input("Enter deposit amount for checking account: "))
                         new_balance = logged_in_cus.deposit(login_id, amount, "checking")
                         if new_balance is not None:
                             print(f"Checking account opened successfully Balance: {new_balance}")
                         
-
                     elif user_input == "4":
                         amount = float(input("Enter deposit amount for savings account: "))
                         new_balance = logged_in_cus.deposit(login_id, amount, "savings")
@@ -131,7 +102,7 @@ if __name__ == "__main__":
                             target_id = input("Enter target customer id: ")
                             amount = float(input("Enter amount to transfer: "))
                             successful_tran = logged_in_cus.transfer_to_customer(from_account, target_id, amount)
-                            
+
                         if successful_tran:
                             print(f"New checking balance: {logged_in_cus.checking_account.balance}")
                             print(f"New savings balance: {logged_in_cus.savings_account.balance}")    

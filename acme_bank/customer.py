@@ -43,6 +43,10 @@ class Customer:
 
                     new_balance = self.checking_account.deposit(amount)
                     row[4] = str(new_balance)
+
+                    self.checking_account.balance = new_balance
+
+                    self.auto_reactivate(account_type)
                     break
                 elif account_type == "savings":
                     if row[5]:
@@ -56,7 +60,12 @@ class Customer:
                     
                     new_balance = self.savings_account.deposit(amount)
                     row[5] = str(new_balance)
+
+                    self.savings_account.balance = new_balance
+                    
+                    self.auto_reactivate(account_type)
                     break
+
         with open(csv_file, "w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(header)
@@ -69,12 +78,46 @@ class Customer:
             print("False customer id mismatch")
             return None
         
+        if account_type == "checking":
+            account = self.checking_account
+        elif account_type == "savings":
+            account = self.savings_account
+        else:
+            print("invalid account type")
+            return None
+        
+        if not account.is_active:
+            print("Account is deactivated you did 2 overdrafts or withdraw more than 100")
+            return None
+        
+
         csv_file = "bank.csv"
 
         with open(csv_file, "r", newline="") as file:
             reader = csv.reader(file)
             header = next(reader)
             rows = list(reader)
+        
+        if amount > account.balance:
+            test_overdraft_balance = account.balance - amount - 35
+
+            # rule 1 the account cannot have a resulting balance of less than -$100
+            if amount > 100 and test_overdraft_balance < 0:
+                print("Cant withdraw more than 100 when account will be negative")
+                account.failed_overdraft_count += 1
+                if account.failed_overdraft_count >= 2:
+                    account.is_active = False
+                    print("Account is deactivated you did 2 failed overdraft")
+                return None
+            
+            # rule 2 account cant go below -100
+            if test_overdraft_balance < -100:
+                print("Account cant go below -100")
+                account.failed_overdraft_count += 1
+                if account.failed_overdraft_count >= 2:
+                    account.is_active = False
+                    print("Account is deactivated you did 2 failed overdraft")
+                return None
 
             for row in rows:
                 if row[0] == self.account_id:
@@ -84,33 +127,66 @@ class Customer:
                         else:
                             current_balance = 0.0
                         
-                        if amount > current_balance:
-                            print("insufficient funds")
-                            return None
-                        
-                        new_balance = self.checking_account.withdraw(amount)
+                        new_balance = current_balance - amount - 35
                         row[4] = str(new_balance)
+
+                        # here im updating the account object because in the current session the account balance is not updated and to prevent errors
+                        account.balance = new_balance 
+                        account.overdraft_count += 1
+
+                        if account.overdraft_count >= 2:
+                            account.is_active = False
+                            print("Account deactivated you did 2 overdraft")
+
+                        print(f"Withdraw successful {amount} + 35 fee: {amount + 35}")
                         break
 
-                    elif account_type == "savings":
-                        if row[5]:
-                            current_balance = float(row[5])
-                        else:
-                            current_balance = 0.0
-                        
-                        if amount > current_balance:
-                            print("insufficient funds")
-                            return None
-                        
-                        new_balance = self.savings_account.withdraw(amount)
-                        row[5] = str(new_balance)
-                        break
             with open(csv_file, "w", newline="") as file:
                 writer = csv.writer(file)
                 writer.writerow(header)
                 writer.writerows(rows)
 
-            return new_balance
+            return account.balance
+        
+        else:
+            for row in rows:
+                if row[0] == self.account_id:
+                    if account_type == "checking":
+                        if row[4]:
+                            current_balance = float(row[4])
+                        else:
+                            current_balance = 0.0
+                        
+                        new_balance = self.checking_account.withdraw(amount)
+                        if new_balance is not None:
+                            row[4] = str(new_balance)
+                            print("withdraw successful")
+                        else:
+                            print(f"withdraw failed {amount}")
+                            return None
+                        break
+                    elif account_type == "savings":
+                        if row[5]:
+                            current_balance = float(row[5])
+                        else:
+                            current_balance = 0.0
+
+                        new_balance = self.savings_account.withdraw(amount)
+                        if new_balance is not None:
+                            row[5] = str(new_balance)
+                            print(f"withdraw successful {amount}")    
+                        else:
+                            print("withdraw failed")
+                            return None
+                        break
+
+                        
+        with open(csv_file, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(header)
+            writer.writerows(rows)
+
+        return new_balance
 
     def transfer_bet_my_accounts(self, from_account, to_account, amount):
         csv_file = "bank.csv"
@@ -135,7 +211,7 @@ class Customer:
             if row[0] == self.account_id:
 
                 account_found = True
-                
+
                 
                 if from_account == "checking" and to_account == "savings":
                     if row[4]:
@@ -181,7 +257,7 @@ class Customer:
                 break
         
         if not account_found:
-            print("Our account was not found in CSV!")
+            print("The account was not found in CSV!")
             return False
         
         with open(csv_file, "w", newline="") as file:
@@ -258,3 +334,17 @@ class Customer:
         
         print(f"Transfer successful {amount} sent to {target_account_id}")
         return True
+    
+    def auto_reactivate(self, account_type):
+        if account_type == "checking":
+            account = self.checking_account
+        else:
+            account = self.savings_account
+        
+        if not account.is_active and account.balance >= 0:
+            account.is_active = True
+            account.overdraft_count = 0
+            account.failed_overdraft_count = 0
+            print("Account is now reactivated")
+            return True
+        return False
