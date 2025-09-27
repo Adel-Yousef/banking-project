@@ -44,7 +44,7 @@ if __name__ == "__main__":
             if logged_in_cus:
                 print("welcome", logged_in_cus.first_name, logged_in_cus.last_name)
                 while True:
-                    user_input = input("1) Deposit 2) Withdraw 3) open Checking 4) open Savings 5) Exit ")
+                    user_input = input("(1) Deposit (2) Withdraw (3) open Checking (4) open Savings (5) Transfer (6) Exit ")
 
                     if user_input == "1":
                         account_type = input("From which account? (checking/savings): ").lower()
@@ -54,6 +54,7 @@ if __name__ == "__main__":
                             reader = csv.reader(file)
                             header = next(reader)
                             rows = list(reader)
+
                         for row in rows:
                             if row[0] == login_id:
                                 if account_type == "checking":
@@ -61,6 +62,7 @@ if __name__ == "__main__":
                                         current_balance = float(row[4])
                                     else:
                                         current_balance = 0.0
+
                                     new_balance = current_balance + amount
                                     row[4] = str(new_balance)
                                     print(f"Deposit seccess your checking balance is: {new_balance}")
@@ -70,6 +72,7 @@ if __name__ == "__main__":
                                         current_balance = float(row[5])
                                     else:
                                         current_balance = 0.0
+
                                     new_balance = current_balance + amount
                                     row[5] = str(new_balance)
                                     print(f"Deposit success new balance is: {row[5]}")
@@ -80,7 +83,6 @@ if __name__ == "__main__":
                                     writer.writerows(rows)
                                 break
                         
-
                     elif user_input == "2":
                         account_type = input("From which account? (checking/savings): ").lower()
                         amount = float(input(f"Enter amount to withdraw form {account_type}: "))
@@ -92,8 +94,11 @@ if __name__ == "__main__":
                             print("Withdraw failed insufficient funds")
                         
 
-                    # elif user_input == "3":
-                        
+                    elif user_input == "3":
+                        amount = float(input("Enter deposit amount for checking account: "))
+                        new_balance = logged_in_cus.deposit(login_id, amount, "checking")
+                        if new_balance is not None:
+                            print(f"Checking account opened successfully Balance: {new_balance}")
                         
 
                     elif user_input == "4":
@@ -103,6 +108,35 @@ if __name__ == "__main__":
                             print(f"Savings account opened successfully Balance: {new_balance}")
 
                     elif user_input == "5":
+                        print("1) transfer between my accounts")
+                        print("2) transfer to customer")
+                        tran_input = input("choose 1 or 2 : ")
+
+                        if tran_input == "1":
+                            print("1) checking to savings")
+                            print("2) savings to checking")
+                            to_input = input("choose 1 or 2 : ")
+                            amount = float(input("Enter the amount to transfer: "))
+
+                            if to_input == "1":
+                                successful_tran = logged_in_cus.transfer_bet_my_accounts("checking", "savings", amount)
+                            elif to_input == "2":
+                                successful_tran = logged_in_cus.transfer_bet_my_accounts("savings", "checking", amount)
+                            else:
+                                print("invalid choice")
+                                successful_tran = False
+
+                        elif tran_input == "2":
+                            from_account = input("Transfer from which account? (checking/savings):  ").lower()
+                            target_id = input("Enter target customer id: ")
+                            amount = float(input("Enter amount to transfer: "))
+                            successful_tran = logged_in_cus.transfer_to_customer(from_account, target_id, amount)
+                            
+                        if successful_tran:
+                            print(f"New checking balance: {logged_in_cus.checking_account.balance}")
+                            print(f"New savings balance: {logged_in_cus.savings_account.balance}")    
+
+                    elif user_input == "6":
                         print("Logged out")
                         break
                     else:

@@ -109,9 +109,151 @@ class Customer:
                 writer = csv.writer(file)
                 writer.writerow(header)
                 writer.writerows(rows)
-                
+
             return new_balance
 
+    def transfer_bet_my_accounts(self, from_account, to_account, amount):
+        csv_file = "bank.csv"
+        
+        if from_account == "checking":
+            if amount > self.checking_account.balance:
+                print("Not enough money in checking account")
+                return False
+        else:  
+            if amount > self.savings_account.balance:
+                print("Not enough money in savings account")
+                return False
+        
+        with open(csv_file, "r", newline="") as file:
+            reader = csv.reader(file)
+            header = next(reader)
+            rows = list(reader)
+        
+        account_found = False
+        
+        for row in rows:
+            if row[0] == self.account_id:
 
+                account_found = True
+                
+                if from_account == "checking" and to_account == "savings":
+                    if row[4]:
+                        checking_balance = float(row[4])
+                    else:
+                        checking_balance = 0.0
+                    
+                    if row[5]:
+                        savings_balance = float(row[5])
+                    else:
+                        savings_balance = 0.0
+                    
+                    new_checking = checking_balance - amount
+                    new_savings = savings_balance + amount
+                    
+                    row[4] = str(new_checking)
+                    row[5] = str(new_savings)
 
-    
+                    self.checking_account.balance = new_checking
+                    self.savings_account.balance = new_savings
+                
+                elif from_account == "savings" and to_account == "checking":
+                    if row[4]:
+                        checking_balance = float(row[4])
+                    else:
+                        checking_balance = 0.0
+                    
+                    if row[5]:
+                        savings_balance = float(row[5])
+                    else:
+                        savings_balance = 0.0
+                    
+                    new_savings = savings_balance - amount
+                    new_checking = checking_balance + amount
+                    
+                    row[5] = str(new_savings)
+                    row[4] = str(new_checking)
+
+                    # here im updating the account object because in the current session the account balance is not updated and to prevent errors
+                    self.savings_account.balance = new_savings
+                    self.checking_account.balance = new_checking
+                
+                break
+        
+        if not account_found:
+            print("Our account was not found in CSV!")
+            return False
+        
+        with open(csv_file, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(header)
+            writer.writerows(rows)
+        
+        print(f"Transfer {amount} from {from_account} to {to_account} successful!")
+        return True   
+
+    def transfer_to_customer(self, from_account, target_account_id, amount):
+        csv_file = "bank.csv"
+
+        if from_account == "checking":
+            if amount > self.checking_account.balance:
+                print("Not enough money in checking account")
+                return False
+        else:
+            if amount > self.savings_account.balance:
+                print("Not enough money in savings account")
+                return False
+        
+        with open(csv_file, "r", newline="") as file:
+            reader = csv.reader(file)
+            header = next(reader)
+            rows = list(reader)
+
+        target_found = False
+
+        for row in rows:
+            if row[0] == target_account_id:
+                target_found = True
+
+                if row[4]:
+                    target_balance = float(row[4])
+                else:
+                    target_balance = 0.0
+
+                row[4] = str(target_balance + amount)
+                break
+
+        for row in rows:
+            if row[0] == self.account_id:
+                if from_account == "checking":
+                    if row[4]:
+                        current_balance = float(row[4])
+                    else:
+                        current_balance = 0.0
+                        
+                    new_balance = current_balance - amount
+                    row[4] = str(new_balance)
+
+                    self.checking_account.balance = new_balance
+                else:
+                    if row[5]:
+                        current_balance = float(row[5])
+                    else:
+                        current_balance = 0.0
+                        
+                    new_balance = current_balance - amount
+                    row[5] = str(new_balance)
+
+                    self.savings_account.balance = new_balance
+                break
+
+        if not target_found:
+            print(f"customer id {target_account_id} not found")
+            return False
+        
+        with open(csv_file, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(header)
+            writer.writerows(rows)
+        
+        print(f"Transfer successful {amount} sent to {target_account_id}")
+        return True
